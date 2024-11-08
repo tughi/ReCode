@@ -22,6 +22,7 @@ typedef enum Checked_Type_Kind {
     CHECKED_TYPE_KIND__ANY,
     CHECKED_TYPE_KIND__NOTHING, /* Pseudo type */
     CHECKED_TYPE_KIND__NULL,    /* Pseudo type */
+    CHECKED_TYPE_KIND__STRING,
     /* Defined */
     CHECKED_TYPE_KIND__ARRAY,
     CHECKED_TYPE_KIND__EXTERNAL,

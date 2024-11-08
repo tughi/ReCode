@@ -579,7 +579,7 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Declare all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source) {
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
             Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
             switch (named_type->super.kind) {
             case CHECKED_TYPE_KIND__EXTERNAL:
@@ -602,7 +602,7 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Generate all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source) {
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
             Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
             switch (named_type->super.kind) {
             case CHECKED_TYPE_KIND__STRUCT:

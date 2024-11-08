@@ -163,6 +163,9 @@ void declare(CDECL *cdecl, Checked_Type *symbol_type) {
     case CHECKED_TYPE_KIND__I8:
         cdecl->type = String__create_from("int8_t");
         break;
+    case CHECKED_TYPE_KIND__ISIZE:
+        cdecl->type = String__create_from("intmax_t");
+        break;
     case CHECKED_TYPE_KIND__U16:
         cdecl->type = String__create_from("uint16_t");
         break;
@@ -174,6 +177,9 @@ void declare(CDECL *cdecl, Checked_Type *symbol_type) {
         break;
     case CHECKED_TYPE_KIND__U8:
         cdecl->type = String__create_from("uint8_t");
+        break;
+    case CHECKED_TYPE_KIND__USIZE:
+        cdecl->type = String__create_from("uintmax_t");
         break;
     case CHECKED_TYPE_KIND__ANY:
     case CHECKED_TYPE_KIND__NOTHING:
@@ -190,6 +196,9 @@ void declare(CDECL *cdecl, Checked_Type *symbol_type) {
         break;
     case CHECKED_TYPE_KIND__FUNCTION_POINTER:
         declare_function_pointer(cdecl, (Checked_Function_Pointer_Type *)symbol_type);
+        break;
+    case CHECKED_TYPE_KIND__STRING:
+        cdecl->type = String__create_from("struct String");
         break;
     case CHECKED_TYPE_KIND__STRUCT:
     case CHECKED_TYPE_KIND__TRAIT:

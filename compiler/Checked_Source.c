@@ -256,6 +256,10 @@ void pWriter__write__checked_type(Writer *self, Checked_Type *type) {
         pWriter__write__checked_type(self, pointer_type->other_type);
         break;
     }
+    case CHECKED_TYPE_KIND__STRING: {
+        pWriter__write__cstring(self, "str");
+        break;
+    }
     default:
         panic();
     }
