@@ -798,10 +798,9 @@ Checked_Expression *Checker__check_sizeof_expression(Checker *self, Parsed_Sizeo
 }
 
 Checked_Expression *Checker__check_string_expression(Checker *self, Parsed_String_Expression *parsed_expression) {
-    Checked_Type *char_type = (Checked_Type *)Checker__get_builtin_type(self, CHECKED_TYPE_KIND__U8);
-    Checked_Type *expression_type = (Checked_Type *)Checked_Pointer_Type__create(parsed_expression->super.literal->location, char_type);
-    String *value = parsed_expression->value;
-    return (Checked_Expression *)Checked_String_Expression__create(parsed_expression->super.super.location, expression_type, value);
+    Checked_Type *string_type = (Checked_Type *)Checker__get_builtin_type(self, CHECKED_TYPE_KIND__STRING);
+    String *string_value = parsed_expression->value;
+    return (Checked_Expression *)Checked_String_Expression__create(parsed_expression->super.super.location, string_type, string_value);
 }
 
 Checked_Expression *Checker__check_substract_expression(Checker *self, Parsed_Substract_Expression *parsed_expression, Checked_Type *expected_type) {

@@ -254,13 +254,21 @@ void Generator__generate_sizeof_expression(Generator *self, Checked_Sizeof_Expre
 }
 
 void Generator__generate_string_expression(Generator *self, Checked_String_Expression *expression) {
-    pWriter__write__char(self->writer, '"');
-    size_t index = 0;
-    while (index < expression->value->length) {
-        pWriter__write__escaped_char(self->writer, expression->value->data[index]);
-        index = index + 1;
+    pWriter__write__cstring(self->writer, "(struct String){.data = ");
+    if (expression->value->length == 0) {
+        pWriter__write__int64(self->writer, 0);
+    } else {
+        pWriter__write__char(self->writer, '"');
+        size_t index = 0;
+        while (index < expression->value->length) {
+            pWriter__write__escaped_char(self->writer, expression->value->data[index]);
+            index = index + 1;
+        }
+        pWriter__write__char(self->writer, '"');
     }
-    pWriter__write__char(self->writer, '"');
+    pWriter__write__cstring(self->writer, ", .length = ");
+    pWriter__write__int64(self->writer, expression->value->length);
+    pWriter__write__char(self->writer, '}');
 }
 
 void Generator__generate_substract_expression(Generator *self, Checked_Substract_Expression *expression) {
