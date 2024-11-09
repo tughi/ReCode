@@ -732,7 +732,18 @@ Checked_Expression *Checker__check_member_access_expression(Checker *self, Parse
     if (object_type->kind == CHECKED_TYPE_KIND__POINTER) {
         object_type = ((Checked_Pointer_Type *)object_type)->other_type;
     }
-    if (object_type->kind != CHECKED_TYPE_KIND__STRUCT) {
+    switch (object_type->kind) {
+    case CHECKED_TYPE_KIND__STRING:
+        if (String__equals_cstring(parsed_expression->member_name->lexeme, "length")) {
+            return (Checked_Expression *)Checked_String_Length_Expression__create(parsed_expression->super.location, (Checked_Type *)Checker__get_builtin_type(self, CHECKED_TYPE_KIND__USIZE), object_expression);
+        }
+        pWriter__begin_location_message(stderr_writer, parsed_expression->member_name->location, WRITER_STYLE__ERROR);
+        pWriter__write__cstring(stderr_writer, "No such string member");
+        pWriter__end_location_message(stderr_writer);
+        panic();
+    case CHECKED_TYPE_KIND__STRUCT:
+        break;
+    default:
         pWriter__begin_location_message(stderr_writer, object_expression->location, WRITER_STYLE__ERROR);
         pWriter__write__cstring(stderr_writer, "Not a struct type");
         pWriter__end_location_message(stderr_writer);

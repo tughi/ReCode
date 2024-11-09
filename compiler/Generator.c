@@ -271,6 +271,16 @@ void Generator__generate_string_expression(Generator *self, Checked_String_Expre
     pWriter__write__char(self->writer, '}');
 }
 
+void Generator__generate_string_length_expression(Generator *self, Checked_String_Length_Expression *expression) {
+    Generator__generate_expression(self, expression->string_expression);
+    if (expression->string_expression->type->kind == CHECKED_TYPE_KIND__POINTER) {
+        pWriter__write__cstring(self->writer, "->");
+    } else {
+        pWriter__write__char(self->writer, '.');
+    }
+    pWriter__write__cstring(self->writer, "length");
+}
+
 void Generator__generate_substract_expression(Generator *self, Checked_Substract_Expression *expression) {
     Generator__generate_expression(self, expression->super.left_expression);
     pWriter__write__cstring(self->writer, " - ");
@@ -338,6 +348,8 @@ void Generator__generate_expression(Generator *self, Checked_Expression *express
         Generator__generate_sizeof_expression(self, (Checked_Sizeof_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING) {
         Generator__generate_string_expression(self, (Checked_String_Expression *)expression);
+    } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING_LENGTH) {
+        Generator__generate_string_length_expression(self, (Checked_String_Length_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__SUBSTRACT) {
         Generator__generate_substract_expression(self, (Checked_Substract_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__SYMBOL) {

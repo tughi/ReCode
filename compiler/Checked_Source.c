@@ -554,6 +554,12 @@ Checked_String_Expression *Checked_String_Expression__create(Source_Location *lo
     return expression;
 }
 
+Checked_String_Length_Expression *Checked_String_Length_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *string_expression) {
+    Checked_String_Length_Expression *expression = (Checked_String_Length_Expression *)Checked_Expression__create_kind(CHECKED_EXPRESSION_KIND__STRING_LENGTH, sizeof(Checked_String_Length_Expression), location, type);
+    expression->string_expression = string_expression;
+    return expression;
+}
+
 Checked_Substract_Expression *Checked_Substract_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *left_expression, Checked_Expression *right_expression) {
     return (Checked_Substract_Expression *)Checked_Binary_Expression__create_kind(CHECKED_EXPRESSION_KIND__SUBSTRACT, location, type, left_expression, right_expression);
 }
