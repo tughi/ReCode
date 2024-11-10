@@ -1201,6 +1201,7 @@ static void String__append_receiver_type(String *symbol_name, Checked_Type *rece
     }
     case CHECKED_TYPE_KIND__I32:
     case CHECKED_TYPE_KIND__EXTERNAL:
+    case CHECKED_TYPE_KIND__STRING:
     case CHECKED_TYPE_KIND__STRUCT:
     case CHECKED_TYPE_KIND__TRAIT:
     case CHECKED_TYPE_KIND__U8: {
