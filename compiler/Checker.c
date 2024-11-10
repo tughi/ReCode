@@ -1093,6 +1093,12 @@ Checked_Statement *Checker__check_statement(Checker *self, Parsed_Statement *par
 
 Checked_Assignment_Statement *Checker__check_assignment_statement(Checker *self, Parsed_Assignment_Statement *parsed_statement) {
     Checked_Expression *object_expression = Checker__check_expression(self, parsed_statement->object_expression, NULL);
+    if (!Checked_Expression__is_mutable(object_expression)) {
+        pWriter__begin_location_message(stderr_writer, object_expression->location, WRITER_STYLE__ERROR);
+        pWriter__write__cstring(stderr_writer, "Cannot assign to immutable expression");
+        pWriter__end_location_message(stderr_writer);
+        panic();
+    }
     Checked_Expression *value_expression = Checker__check_expression(self, parsed_statement->value_expression, object_expression->type);
     Checker__require_same_type(self, object_expression->type, value_expression->type, value_expression->location);
     return Checked_Assignment_Statement__create(parsed_statement->super.location, object_expression, value_expression);
