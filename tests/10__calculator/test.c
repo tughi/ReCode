@@ -78,6 +78,8 @@ struct String_Builder *pString_Builder__write__1_char(struct String_Builder *sel
 
 struct String pString_Builder__build(struct String_Builder *self);
 
+struct String_Builder make_string_builder();
+
 struct String_Builder make_string_builder__0_initial_data_size(int32_t initial_data_size);
 
 void pString_Builder__write_char(struct String_Builder *self, uint8_t c);
@@ -170,7 +172,7 @@ bool pTokenizer__has_next_token(struct Tokenizer *self) {
 #line 34 "tests/10__calculator/test.code"
 struct Token *pTokenizer__next_token(struct Tokenizer *self) {
 #line 35 "tests/10__calculator/test.code"
-    struct String_Builder lexeme_builder = make_string_builder__0_initial_data_size(4);
+    struct String_Builder lexeme_builder = make_string_builder();
 #line 36 "tests/10__calculator/test.code"
     uint8_t c = self->data[self->index];
 #line 37 "tests/10__calculator/test.code"
@@ -266,54 +268,60 @@ struct String pString_Builder__build(struct String_Builder *self) {
 }
 
 #line 138 "tests/10__calculator/test.code"
-struct String_Builder make_string_builder__0_initial_data_size(int32_t initial_data_size) {
+struct String_Builder make_string_builder() {
 #line 139 "tests/10__calculator/test.code"
+    return make_string_builder__0_initial_data_size(4);
+}
+
+#line 142 "tests/10__calculator/test.code"
+struct String_Builder make_string_builder__0_initial_data_size(int32_t initial_data_size) {
+#line 143 "tests/10__calculator/test.code"
     return (struct String_Builder){.data = ((uint8_t *) malloc(((uint64_t) initial_data_size))), .data_size = initial_data_size, .length = 0};
 }
 
-#line 146 "tests/10__calculator/test.code"
+#line 150 "tests/10__calculator/test.code"
 void pString_Builder__write_char(struct String_Builder *self, uint8_t c) {
-#line 147 "tests/10__calculator/test.code"
+#line 151 "tests/10__calculator/test.code"
     pString_Builder__write__1_char(self, c);
 }
 
-#line 156 "tests/10__calculator/test.code"
+#line 160 "tests/10__calculator/test.code"
 struct Writer *pWriter__write__1_char(struct Writer *self, uint8_t c) {
-#line 157 "tests/10__calculator/test.code"
+#line 161 "tests/10__calculator/test.code"
     self->write_char(self->self, c);
-#line 158 "tests/10__calculator/test.code"
+#line 162 "tests/10__calculator/test.code"
     return self;
 }
 
-#line 161 "tests/10__calculator/test.code"
-struct Writer *pWriter__write__1_signed(struct Writer *self, int32_t value) {
-#line 163 "tests/10__calculator/test.code"
-    if (value < 0) {
-#line 164 "tests/10__calculator/test.code"
-        pWriter__write__1_char(self, '-');
 #line 165 "tests/10__calculator/test.code"
+struct Writer *pWriter__write__1_signed(struct Writer *self, int32_t value) {
+#line 167 "tests/10__calculator/test.code"
+    if (value < 0) {
+#line 168 "tests/10__calculator/test.code"
+        pWriter__write__1_char(self, '-');
+#line 169 "tests/10__calculator/test.code"
         return pWriter__write__1_signed(self, -value);
     }
-#line 167 "tests/10__calculator/test.code"
+#line 171 "tests/10__calculator/test.code"
     if (value >= 10) {
-#line 168 "tests/10__calculator/test.code"
+#line 172 "tests/10__calculator/test.code"
         pWriter__write__1_signed(self, value / 10);
     }
-#line 170 "tests/10__calculator/test.code"
+#line 174 "tests/10__calculator/test.code"
     return pWriter__write__1_char(self, ((uint8_t) (value % 10)) + '0');
 }
 
-#line 173 "tests/10__calculator/test.code"
+#line 177 "tests/10__calculator/test.code"
 struct Writer *pWriter__end_line(struct Writer *self) {
-#line 174 "tests/10__calculator/test.code"
+#line 178 "tests/10__calculator/test.code"
     pWriter__write__1_char(self, '\n');
-#line 175 "tests/10__calculator/test.code"
+#line 179 "tests/10__calculator/test.code"
     return self;
 }
 
-#line 188 "tests/10__calculator/test.code"
+#line 192 "tests/10__calculator/test.code"
 void pFILE__write_char(FILE *self, uint8_t c) {
-#line 189 "tests/10__calculator/test.code"
+#line 193 "tests/10__calculator/test.code"
     fputc(((int32_t) c), stdout);
 }
 

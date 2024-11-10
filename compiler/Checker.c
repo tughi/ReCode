@@ -268,7 +268,7 @@ typedef struct Checked_Callable {
 Checked_Callable Checker__check_callable_symbol(Checker *self, Token *symbol_name, Parsed_Call_Argument *first_parsed_argument, Checked_Expression *receiver_expression) {
     if (receiver_expression == NULL) {
         Checked_Symbol *symbol = Checked_Symbols__find_symbol(self->symbols, symbol_name->lexeme);
-        if (symbol != NULL) {
+        if (symbol != NULL && symbol->kind != CHECKED_SYMBOL_KIND__FUNCTION) {
             if (symbol->type->kind != CHECKED_TYPE_KIND__FUNCTION_POINTER) {
                 pWriter__begin_location_message(stderr_writer, symbol_name->location, WRITER_STYLE__ERROR);
                 pWriter__write__cstring(stderr_writer, "Not a function pointer");
