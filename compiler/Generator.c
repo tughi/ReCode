@@ -60,10 +60,11 @@ void Generator__generate_call_expression(Generator *self, Checked_Call_Expressio
 }
 
 void Generator__generate_cast_expression(Generator *self, Checked_Cast_Expression *expression) {
-    pWriter__write__cstring(self->writer, "(");
+    pWriter__write__cstring(self->writer, "((");
     pWriter__write__cdecl(self->writer, NULL, expression->super.type);
     pWriter__write__cstring(self->writer, ") ");
     Generator__generate_expression(self, expression->other_expression);
+    pWriter__write__char(self->writer, ')');
 }
 
 void pWriter__write__octal_escaped_char(Writer *writer, char value) {
@@ -254,13 +255,31 @@ void Generator__generate_sizeof_expression(Generator *self, Checked_Sizeof_Expre
 }
 
 void Generator__generate_string_expression(Generator *self, Checked_String_Expression *expression) {
-    pWriter__write__char(self->writer, '"');
-    size_t index = 0;
-    while (index < expression->value->length) {
-        pWriter__write__escaped_char(self->writer, expression->value->data[index]);
-        index = index + 1;
+    pWriter__write__cstring(self->writer, "(struct String){.data = ");
+    if (expression->value->length == 0) {
+        pWriter__write__int64(self->writer, 0);
+    } else {
+        pWriter__write__char(self->writer, '"');
+        size_t index = 0;
+        while (index < expression->value->length) {
+            pWriter__write__escaped_char(self->writer, expression->value->data[index]);
+            index = index + 1;
+        }
+        pWriter__write__char(self->writer, '"');
     }
-    pWriter__write__char(self->writer, '"');
+    pWriter__write__cstring(self->writer, ", .length = ");
+    pWriter__write__int64(self->writer, expression->value->length);
+    pWriter__write__char(self->writer, '}');
+}
+
+void Generator__generate_string_length_expression(Generator *self, Checked_String_Length_Expression *expression) {
+    Generator__generate_expression(self, expression->string_expression);
+    if (expression->string_expression->type->kind == CHECKED_TYPE_KIND__POINTER) {
+        pWriter__write__cstring(self->writer, "->");
+    } else {
+        pWriter__write__char(self->writer, '.');
+    }
+    pWriter__write__cstring(self->writer, "length");
 }
 
 void Generator__generate_substract_expression(Generator *self, Checked_Substract_Expression *expression) {
@@ -330,6 +349,8 @@ void Generator__generate_expression(Generator *self, Checked_Expression *express
         Generator__generate_sizeof_expression(self, (Checked_Sizeof_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING) {
         Generator__generate_string_expression(self, (Checked_String_Expression *)expression);
+    } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING_LENGTH) {
+        Generator__generate_string_length_expression(self, (Checked_String_Length_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__SUBSTRACT) {
         Generator__generate_substract_expression(self, (Checked_Substract_Expression *)expression);
     } else if (expression->kind == CHECKED_EXPRESSION_KIND__SYMBOL) {
@@ -579,7 +600,7 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Declare all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source) {
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
             Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
             switch (named_type->super.kind) {
             case CHECKED_TYPE_KIND__EXTERNAL:
@@ -602,7 +623,7 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Generate all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source) {
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
             Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
             switch (named_type->super.kind) {
             case CHECKED_TYPE_KIND__STRUCT:
