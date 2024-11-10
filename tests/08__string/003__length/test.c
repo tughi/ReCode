@@ -23,6 +23,6 @@ int32_t main() {
 #line 6 "tests/08__string/003__length/test.code"
     struct String *message_ptr = &message;
 #line 7 "tests/08__string/003__length/test.code"
-    return (int32_t) message_ptr->length - 16;
+    return ((int32_t) message_ptr->length) - 16;
 }
 

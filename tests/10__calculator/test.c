@@ -125,7 +125,7 @@ void main(int32_t argc, uint8_t **argv) {
 #line 6 "tests/10__calculator/test.code"
     struct Tokenizer tokenizer = (struct Tokenizer){.data = argv[1], .index = 0};
 #line 11 "tests/10__calculator/test.code"
-    struct Writer stdout_writer = (struct Writer){.self = stdout, .write_char = (void (*)(void *self, uint8_t c)) pFILE__write_char};
+    struct Writer stdout_writer = (struct Writer){.self = stdout, .write_char = ((void (*)(void *self, uint8_t c)) pFILE__write_char)};
 #line 12 "tests/10__calculator/test.code"
     while (pTokenizer__has_next_token(&tokenizer)) {
 #line 13 "tests/10__calculator/test.code"
@@ -149,7 +149,7 @@ bool pTokenizer__has_next_token(struct Tokenizer *self) {
 #line 31 "tests/10__calculator/test.code"
 struct Token *pTokenizer__next_token(struct Tokenizer *self) {
 #line 32 "tests/10__calculator/test.code"
-    struct StringBuilder lexeme_builder = (struct StringBuilder){.data = (uint8_t *) malloc(4u), .data_size = 4, .length = 0};
+    struct StringBuilder lexeme_builder = (struct StringBuilder){.data = ((uint8_t *) malloc(4u)), .data_size = 4, .length = 0};
 #line 37 "tests/10__calculator/test.code"
     uint8_t c = self->data[self->index];
 #line 38 "tests/10__calculator/test.code"
@@ -179,7 +179,7 @@ struct Token *pTokenizer__scan_number_token(struct Tokenizer *self, struct Strin
 #line 58 "tests/10__calculator/test.code"
         pStringBuilder__write__1_char(lexeme_builder, c);
 #line 59 "tests/10__calculator/test.code"
-        value = value * 10 + (int32_t) (c - '0');
+        value = value * 10 + ((int32_t) (c - '0'));
 #line 60 "tests/10__calculator/test.code"
         self->index = self->index + 1;
     }
@@ -207,7 +207,7 @@ struct StringBuilder *pStringBuilder__write__1_char(struct StringBuilder *self, 
 #line 101 "tests/10__calculator/test.code"
         self->data_size = self->data_size + 8;
 #line 102 "tests/10__calculator/test.code"
-        self->data = (uint8_t *) realloc((void *) self->data, (uint64_t) self->data_size);
+        self->data = ((uint8_t *) realloc(((void *) self->data), ((uint64_t) self->data_size)));
     }
 #line 107 "tests/10__calculator/test.code"
     self->data[self->length] = c;
@@ -254,7 +254,7 @@ struct Writer *pWriter__write__1_signed(struct Writer *self, int32_t value) {
         pWriter__write__1_signed(self, value / 10);
     }
 #line 142 "tests/10__calculator/test.code"
-    return pWriter__write__1_char(self, (uint8_t) (value % 10) + '0');
+    return pWriter__write__1_char(self, ((uint8_t) (value % 10)) + '0');
 }
 
 #line 145 "tests/10__calculator/test.code"
@@ -268,6 +268,6 @@ struct Writer *pWriter__end_line(struct Writer *self) {
 #line 160 "tests/10__calculator/test.code"
 void pFILE__write_char(FILE *self, uint8_t c) {
 #line 161 "tests/10__calculator/test.code"
-    fputc((int32_t) c, stdout);
+    fputc(((int32_t) c), stdout);
 }
 

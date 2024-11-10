@@ -60,10 +60,11 @@ void Generator__generate_call_expression(Generator *self, Checked_Call_Expressio
 }
 
 void Generator__generate_cast_expression(Generator *self, Checked_Cast_Expression *expression) {
-    pWriter__write__cstring(self->writer, "(");
+    pWriter__write__cstring(self->writer, "((");
     pWriter__write__cdecl(self->writer, NULL, expression->super.type);
     pWriter__write__cstring(self->writer, ") ");
     Generator__generate_expression(self, expression->other_expression);
+    pWriter__write__char(self->writer, ')');
 }
 
 void pWriter__write__octal_escaped_char(Writer *writer, char value) {
