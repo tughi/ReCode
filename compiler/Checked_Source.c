@@ -8,6 +8,8 @@ Checked_Type *Checked_Type__create_kind(Checked_Type_Kind kind, size_t kind_size
     type->kind = kind;
     type->location = location;
     type->next_type = NULL;
+    type->first_dependency = NULL;
+    type->has_generated_definition = false;
     return type;
 }
 
@@ -157,6 +159,10 @@ bool Checked_Struct_Type__equals(Checked_Struct_Type *self, Checked_Struct_Type 
     return String__equals_string(self->super.name, other->super.name);
 }
 
+bool Checked_Union_Type__equals(Checked_Union_Type *self, Checked_Union_Type *other) {
+    return String__equals_string(self->super.name, other->super.name);
+}
+
 Checked_Trait_Method *Checked_Trait_Method__create(Source_Location *location, String *name, Checked_Function_Type *function_type, Checked_Struct_Member *struct_member) {
     Checked_Trait_Method *method = (Checked_Trait_Method *)malloc(sizeof(Checked_Trait_Method));
     method->location = location;
@@ -172,6 +178,21 @@ Checked_Trait_Type *Checked_Trait_Type__create(Source_Location *location, String
     type->struct_type = NULL;
     type->self_struct_member = NULL;
     type->first_method = NULL;
+    return type;
+}
+
+Checked_Union_Variant *Checked_Union_Variant__create(Source_Location *location, Checked_Type *type, int32_t index) {
+    Checked_Union_Variant *member = (Checked_Union_Variant *)malloc(sizeof(Checked_Union_Variant));
+    member->type = type;
+    member->next_variant = NULL;
+    member->index = index;
+    return member;
+}
+
+Checked_Union_Type *Checked_Union_Type__create(Source_Location *location, String *name) {
+    Checked_Union_Type *type = (Checked_Union_Type *)Checked_Named_Type__create_kind(CHECKED_TYPE_KIND__UNION, sizeof(Checked_Union_Type), location, name);
+    type->first_variant = NULL;
+    type->variant_count = 0;
     return type;
 }
 
@@ -195,6 +216,8 @@ bool Checked_Type__equals(Checked_Type *self, Checked_Type *other) {
         return Checked_Pointer_Type__equals((Checked_Pointer_Type *)self, (Checked_Pointer_Type *)other);
     case CHECKED_TYPE_KIND__STRUCT:
         return Checked_Struct_Type__equals((Checked_Struct_Type *)self, (Checked_Struct_Type *)other);
+    case CHECKED_TYPE_KIND__UNION:
+        return Checked_Union_Type__equals((Checked_Union_Type *)self, (Checked_Union_Type *)other);
     }
     todo("Handle unexpected Checked_Type_Kind");
 }
@@ -207,6 +230,7 @@ void pWriter__write__checked_type(Writer *self, Checked_Type *type) {
     case CHECKED_TYPE_KIND__I64:
     case CHECKED_TYPE_KIND__I8:
     case CHECKED_TYPE_KIND__ISIZE:
+    case CHECKED_TYPE_KIND__NIL:
     case CHECKED_TYPE_KIND__U16:
     case CHECKED_TYPE_KIND__U32:
     case CHECKED_TYPE_KIND__U64:
@@ -214,7 +238,8 @@ void pWriter__write__checked_type(Writer *self, Checked_Type *type) {
     case CHECKED_TYPE_KIND__USIZE:
     case CHECKED_TYPE_KIND__ANY:
     case CHECKED_TYPE_KIND__STRUCT:
-    case CHECKED_TYPE_KIND__TRAIT: {
+    case CHECKED_TYPE_KIND__TRAIT:
+    case CHECKED_TYPE_KIND__UNION: {
         Checked_Named_Type *named_type = (Checked_Named_Type *)type;
         pWriter__write__string(self, named_type->name);
         break;
@@ -258,6 +283,10 @@ void pWriter__write__checked_type(Writer *self, Checked_Type *type) {
     }
     case CHECKED_TYPE_KIND__STRING: {
         pWriter__write__cstring(self, "str");
+        break;
+    }
+    case CHECKED_TYPE_KIND__TYPE: {
+        pWriter__write__cstring(self, "type");
         break;
     }
     default:
@@ -332,14 +361,21 @@ Checked_Function_Parameter_Symbol *Checked_Function_Parameter_Symbol__create(Sou
     return (Checked_Function_Parameter_Symbol *)Checked_Symbol__create_kind(CHECKED_SYMBOL_KIND__FUNCTION_PARAMETER, sizeof(Checked_Function_Parameter_Symbol), location, name, type);
 }
 
-Checked_Type_Symbol *Checked_Type_Symbol__create(Source_Location *location, String *name, Checked_Named_Type *named_type) {
-    Checked_Type_Symbol *symbol = (Checked_Type_Symbol *)Checked_Symbol__create_kind(CHECKED_SYMBOL_KIND__TYPE, sizeof(Checked_Type_Symbol), location, name, NULL);
+Checked_Type_Symbol *Checked_Type_Symbol__create(Source_Location *location, String *name, Checked_Type *type, Checked_Named_Type *named_type) {
+    Checked_Type_Symbol *symbol = (Checked_Type_Symbol *)Checked_Symbol__create_kind(CHECKED_SYMBOL_KIND__TYPE, sizeof(Checked_Type_Symbol), location, name, type);
     symbol->named_type = named_type;
     return symbol;
 }
 
 Checked_Variable_Symbol *Checked_Variable_Symbol__create(Source_Location *location, String *name, Checked_Type *type) {
     return (Checked_Variable_Symbol *)Checked_Symbol__create_kind(CHECKED_SYMBOL_KIND__VARIABLE, sizeof(Checked_Variable_Symbol), location, name, type);
+}
+
+Checked_Union_Switch_Variant_Symbol *Checked_Union_Switch_Variant_Symbol__create(Source_Location *location, String *name, Checked_Expression *union_expression, Checked_Union_Variant *union_variant) {
+    Checked_Union_Switch_Variant_Symbol *symbol = (Checked_Union_Switch_Variant_Symbol *)Checked_Symbol__create_kind(CHECKED_SYMBOL_KIND__UNION_SWITCH_VARIANT, sizeof(Checked_Union_Switch_Variant_Symbol), location, name, union_variant->type);
+    symbol->union_expression = union_expression;
+    symbol->union_variant = union_variant;
+    return symbol;
 }
 
 Checked_Symbols *Checked_Symbols__create(Checked_Symbols *parent) {
@@ -520,6 +556,14 @@ Checked_Integer_Expression *Checked_Integer_Expression__create(Source_Location *
     return expression;
 }
 
+Checked_Is_Union_Variant_Expression *Checked_Is_Union_Variant_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *union_expression, Checked_Union_Variant *union_variant, bool is_not) {
+    Checked_Is_Union_Variant_Expression *expression = (Checked_Is_Union_Variant_Expression *)Checked_Expression__create_kind(CHECKED_EXPRESSION_KIND__IS_UNION_VARIANT, sizeof(Checked_Is_Union_Variant_Expression), location, type);
+    expression->union_expression = union_expression;
+    expression->union_variant = union_variant;
+    expression->is_not = is_not;
+    return expression;
+}
+
 Checked_Less_Expression *Checked_Less_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *left_expression, Checked_Expression *right_expression) {
     return (Checked_Less_Expression *)Checked_Binary_Expression__create_kind(CHECKED_EXPRESSION_KIND__LESS, location, type, left_expression, right_expression);
 }
@@ -600,14 +644,22 @@ Checked_String_Length_Expression *Checked_String_Length_Expression__create(Sourc
     return expression;
 }
 
-Checked_Substract_Expression *Checked_Substract_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *left_expression, Checked_Expression *right_expression) {
-    return (Checked_Substract_Expression *)Checked_Binary_Expression__create_kind(CHECKED_EXPRESSION_KIND__SUBSTRACT, location, type, left_expression, right_expression);
+Checked_Subtract_Expression *Checked_Subtract_Expression__create(Source_Location *location, Checked_Type *type, Checked_Expression *left_expression, Checked_Expression *right_expression) {
+    return (Checked_Subtract_Expression *)Checked_Binary_Expression__create_kind(CHECKED_EXPRESSION_KIND__SUBTRACT, location, type, left_expression, right_expression);
 }
 
 Checked_Symbol_Expression *Checked_Symbol_Expression__create(Source_Location *location, Checked_Type *type, Checked_Symbol *symbol) {
     Checked_Symbol_Expression *expression = (Checked_Symbol_Expression *)Checked_Expression__create_kind(CHECKED_EXPRESSION_KIND__SYMBOL, sizeof(Checked_Symbol_Expression), location, type);
     expression->symbol = symbol;
     return expression;
+}
+
+Checked_Make_Union_Expression *Checked_Make_Union_Expression__create(Source_Location *location, Checked_Type *type, Checked_Union_Type *union_type, Checked_Union_Variant *union_variant, Checked_Expression *expression) {
+    Checked_Make_Union_Expression *union_expression = (Checked_Make_Union_Expression *)Checked_Expression__create_kind(CHECKED_EXPRESSION_KIND__MAKE_UNION, sizeof(Checked_Make_Union_Expression), location, type);
+    union_expression->union_type = union_type;
+    union_expression->union_variant = union_variant;
+    union_expression->expression = expression;
+    return union_expression;
 }
 
 Checked_Statement *Checked_Statement__create_kind(Checked_Statement_Kind kind, size_t kind_size, Source_Location *location) {
@@ -658,6 +710,33 @@ Checked_Loop_Statement *Checked_Loop_Statement__create(Source_Location *location
 Checked_Return_Statement *Checked_Return_Statement__create(Source_Location *location, Checked_Expression *expression) {
     Checked_Return_Statement *statement = (Checked_Return_Statement *)Checked_Statement__create_kind(CHECKED_STATEMENT_KIND__RETURN, sizeof(Checked_Return_Statement), location);
     statement->expression = expression;
+    return statement;
+}
+
+Checked_Union_If_Statement *Checked_Union_If_Statement__create(Source_Location *location, Checked_Expression *union_expression, Checked_Union_Variant *union_variant, Checked_Statement *true_statement, Checked_Statement *false_statement) {
+    Checked_Union_If_Statement *statement = (Checked_Union_If_Statement *)Checked_Statement__create_kind(CHECKED_STATEMENT_KIND__UNION_IF, sizeof(Checked_Union_If_Statement), location);
+    statement->union_expression = union_expression;
+    statement->union_variant = union_variant;
+    statement->true_statement = true_statement;
+    statement->false_statement = false_statement;
+    return statement;
+}
+
+Checked_Union_Switch_Case *Checked_Union_Switch_Case__create(Source_Location *location, Checked_Union_Type *union_type, Checked_Union_Variant *union_variant, Checked_Statement *statement) {
+    Checked_Union_Switch_Case *union_switch_case = (Checked_Union_Switch_Case *)malloc(sizeof(Checked_Union_Switch_Case));
+    union_switch_case->location = location;
+    union_switch_case->union_type = union_type;
+    union_switch_case->union_variant = union_variant;
+    union_switch_case->statement = statement;
+    union_switch_case->next_union_switch_case = NULL;
+    return union_switch_case;
+}
+
+Checked_Union_Switch_Statement *Checked_Union_Switch_Statement__create(Source_Location *location, Checked_Expression *expression, Checked_Union_Switch_Case *first_union_switch_case, Checked_Statement *else_statement) {
+    Checked_Union_Switch_Statement *statement = (Checked_Union_Switch_Statement *)Checked_Statement__create_kind(CHECKED_STATEMENT_KIND__UNION_SWITCH, sizeof(Checked_Union_Switch_Statement), location);
+    statement->expression = expression;
+    statement->first_union_switch_case = first_union_switch_case;
+    statement->else_statement = else_statement;
     return statement;
 }
 

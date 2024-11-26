@@ -155,6 +155,16 @@ void Generator__generate_integer_expression(Generator *self, Checked_Integer_Exp
         break;
     }
 }
+void Generator__generate_is_union_variant_expression(Generator *self, Checked_Is_Union_Variant_Expression *expression) {
+    Generator__generate_expression(self, expression->union_expression);
+    pWriter__write__cstring(self->writer, ".variant");
+    if (expression->is_not) {
+        pWriter__write__cstring(self->writer, " != ");
+    } else {
+        pWriter__write__cstring(self->writer, " == ");
+    }
+    pWriter__write__int64(self->writer, expression->union_variant->index);
+}
 
 void Generator__generate_less_expression(Generator *self, Checked_Less_Expression *expression) {
     Generator__generate_expression(self, expression->super.left_expression);
@@ -204,6 +214,23 @@ void Generator__generate_make_struct_expression(Generator *self, Checked_Make_St
     if (expression->super.type->kind == CHECKED_TYPE_KIND__POINTER) {
         pWriter__write__char(self->writer, ')');
     }
+}
+
+void Generator__generate_make_union_expression(Generator *self, Checked_Make_Union_Expression *expression) {
+    if (expression->super.type->kind == CHECKED_TYPE_KIND__POINTER) {
+        todo("Implement make union pointer");
+    }
+    pWriter__write__char(self->writer, '(');
+    pWriter__write__cdecl(self->writer, NULL, (Checked_Type *)expression->union_type);
+    pWriter__write__cstring(self->writer, "){.variant = ");
+    pWriter__write__int64(self->writer, expression->union_variant->index);
+    if (expression->union_variant->index > 0) {
+        pWriter__write__cstring(self->writer, ", .variant_");
+        pWriter__write__int64(self->writer, expression->union_variant->index);
+        pWriter__write__cstring(self->writer, " = ");
+        Generator__generate_expression(self, expression->expression);
+    }
+    pWriter__write__char(self->writer, '}');
 }
 
 void Generator__generate_member_access_expression(Generator *self, Checked_Member_Access_Expression *expression) {
@@ -282,80 +309,125 @@ void Generator__generate_string_length_expression(Generator *self, Checked_Strin
     pWriter__write__cstring(self->writer, "length");
 }
 
-void Generator__generate_substract_expression(Generator *self, Checked_Substract_Expression *expression) {
+void Generator__generate_subtract_expression(Generator *self, Checked_Subtract_Expression *expression) {
     Generator__generate_expression(self, expression->super.left_expression);
     pWriter__write__cstring(self->writer, " - ");
     Generator__generate_expression(self, expression->super.right_expression);
 }
 
 void Generator__generate_symbol_expression(Generator *self, Checked_Symbol_Expression *expression) {
-    pWriter__write__string(self->writer, expression->symbol->name);
+    if (expression->symbol->kind == CHECKED_SYMBOL_KIND__UNION_SWITCH_VARIANT) {
+        Checked_Union_Switch_Variant_Symbol *variant_symbol = (Checked_Union_Switch_Variant_Symbol *)expression->symbol;
+        Generator__generate_expression(self, variant_symbol->union_expression);
+        pWriter__write__cstring(self->writer, ".variant_");
+        pWriter__write__int64(self->writer, variant_symbol->union_variant->index);
+    } else {
+        pWriter__write__string(self->writer, expression->symbol->name);
+    }
 }
 
 void Generator__generate_expression(Generator *self, Checked_Expression *expression) {
-    if (expression->kind == CHECKED_EXPRESSION_KIND__ADD) {
+    switch (expression->kind) {
+    case CHECKED_EXPRESSION_KIND__ADD:
         Generator__generate_add_expression(self, (Checked_Add_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__ADDRESS_OF) {
+        break;
+    case CHECKED_EXPRESSION_KIND__ADDRESS_OF:
         Generator__generate_address_of_expression(self, (Checked_Address_Of_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__ARRAY_ACCESS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__ARRAY_ACCESS:
         Generator__generate_array_access_expression(self, (Checked_Array_Access_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__BOOL) {
+        break;
+    case CHECKED_EXPRESSION_KIND__BOOL:
         Generator__generate_bool_expression(self, (Checked_Bool_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__CALL) {
+        break;
+    case CHECKED_EXPRESSION_KIND__CALL:
         Generator__generate_call_expression(self, (Checked_Call_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__CAST) {
+        break;
+    case CHECKED_EXPRESSION_KIND__CAST:
         Generator__generate_cast_expression(self, (Checked_Cast_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__CHARACTER) {
+        break;
+    case CHECKED_EXPRESSION_KIND__CHARACTER:
         Generator__generate_character_expression(self, (Checked_Character_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__DEREFERENCE) {
+        break;
+    case CHECKED_EXPRESSION_KIND__DEREFERENCE:
         Generator__generate_dereference_expression(self, (Checked_Dereference_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__DIVIDE) {
+        break;
+    case CHECKED_EXPRESSION_KIND__DIVIDE:
         Generator__generate_divide_expression(self, (Checked_Divide_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__EQUALS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__EQUALS:
         Generator__generate_equals_expression(self, (Checked_Equals_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__GREATER) {
+        break;
+    case CHECKED_EXPRESSION_KIND__GREATER:
         Generator__generate_greater_expression(self, (Checked_Greater_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__GREATER_OR_EQUALS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__GREATER_OR_EQUALS:
         Generator__generate_greater_or_equals_expression(self, (Checked_Greater_Or_Equals_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__GROUP) {
+        break;
+    case CHECKED_EXPRESSION_KIND__GROUP:
         Generator__generate_group_expression(self, (Checked_Group_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__INTEGER) {
+        break;
+    case CHECKED_EXPRESSION_KIND__INTEGER:
         Generator__generate_integer_expression(self, (Checked_Integer_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__LESS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__IS_UNION_VARIANT:
+        Generator__generate_is_union_variant_expression(self, (Checked_Is_Union_Variant_Expression *)expression);
+        break;
+    case CHECKED_EXPRESSION_KIND__LESS:
         Generator__generate_less_expression(self, (Checked_Less_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__LESS_OR_EQUALS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__LESS_OR_EQUALS:
         Generator__generate_less_or_equals_expression(self, (Checked_Less_Or_Equals_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__LOGIC_AND) {
+        break;
+    case CHECKED_EXPRESSION_KIND__LOGIC_AND:
         Generator__generate_logic_and_expression(self, (Checked_Logic_And_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__LOGIC_OR) {
+        break;
+    case CHECKED_EXPRESSION_KIND__LOGIC_OR:
         Generator__generate_logic_or_expression(self, (Checked_Logic_Or_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__MAKE_STRUCT) {
+        break;
+    case CHECKED_EXPRESSION_KIND__MAKE_STRUCT:
         Generator__generate_make_struct_expression(self, (Checked_Make_Struct_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__MEMBER_ACCESS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__MAKE_UNION:
+        Generator__generate_make_union_expression(self, (Checked_Make_Union_Expression *)expression);
+        break;
+    case CHECKED_EXPRESSION_KIND__MEMBER_ACCESS:
         Generator__generate_member_access_expression(self, (Checked_Member_Access_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__MINUS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__MINUS:
         Generator__generate_minus_expression(self, (Checked_Minus_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__MODULO) {
+        break;
+    case CHECKED_EXPRESSION_KIND__MODULO:
         Generator__generate_modulo_expression(self, (Checked_Modulo_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__MULTIPLY) {
+        break;
+    case CHECKED_EXPRESSION_KIND__MULTIPLY:
         Generator__generate_multiply_expression(self, (Checked_Multiply_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__NOT) {
+        break;
+    case CHECKED_EXPRESSION_KIND__NOT:
         Generator__generate_not_expression(self, (Checked_Not_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__NOT_EQUALS) {
+        break;
+    case CHECKED_EXPRESSION_KIND__NOT_EQUALS:
         Generator__generate_not_equals_expression(self, (Checked_Not_Equals_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__NULL) {
+        break;
+    case CHECKED_EXPRESSION_KIND__NULL:
         Generator__generate_null_expression(self, (Checked_Null_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__SIZEOF) {
+        break;
+    case CHECKED_EXPRESSION_KIND__SIZEOF:
         Generator__generate_sizeof_expression(self, (Checked_Sizeof_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING) {
+        break;
+    case CHECKED_EXPRESSION_KIND__STRING:
         Generator__generate_string_expression(self, (Checked_String_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__STRING_LENGTH) {
+        break;
+    case CHECKED_EXPRESSION_KIND__STRING_LENGTH:
         Generator__generate_string_length_expression(self, (Checked_String_Length_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__SUBSTRACT) {
-        Generator__generate_substract_expression(self, (Checked_Substract_Expression *)expression);
-    } else if (expression->kind == CHECKED_EXPRESSION_KIND__SYMBOL) {
+        break;
+    case CHECKED_EXPRESSION_KIND__SUBTRACT:
+        Generator__generate_subtract_expression(self, (Checked_Subtract_Expression *)expression);
+        break;
+    case CHECKED_EXPRESSION_KIND__SYMBOL:
         Generator__generate_symbol_expression(self, (Checked_Symbol_Expression *)expression);
-    } else {
+        break;
+    default:
         pWriter__begin_location_message(stderr_writer, expression->location, WRITER_STYLE__ERROR);
         pWriter__write__cstring(stderr_writer, "Unsupported expression");
         pWriter__end_location_message(stderr_writer);
@@ -422,6 +494,45 @@ void Generator__generate_return_statement(Generator *self, Checked_Return_Statem
     pWriter__write__cstring(self->writer, ";");
 }
 
+void Generator__generate_union_if_statement(Generator *self, Checked_Union_If_Statement *statement) {
+    pWriter__write__cstring(self->writer, "if (");
+    Generator__generate_expression(self, statement->union_expression);
+    pWriter__write__cstring(self->writer, ".variant == ");
+    pWriter__write__int64(self->writer, statement->union_variant->index);
+    pWriter__write__cstring(self->writer, ") ");
+    Generator__generate_statement(self, statement->true_statement);
+    if (statement->false_statement != NULL) {
+        pWriter__write__cstring(self->writer, " else ");
+        Generator__generate_statement(self, statement->false_statement);
+    }
+}
+
+void Generator__generate_union_switch_statement(Generator *self, Checked_Union_Switch_Statement *statement) {
+    // The switch statement is generated as if-else statements to allow the use of break statements within the cases.
+
+    // This is a trick for debuggers to stop at the beginning of the switch statement.
+    pWriter__write__cstring(self->writer, "while (false) {");
+    pWriter__end_line(self->writer);
+    Generator__write_identation(self);
+    pWriter__write__cstring(self->writer, "}");
+
+    Checked_Union_Switch_Case *union_switch_case = statement->first_union_switch_case;
+    for (; union_switch_case != NULL; union_switch_case = union_switch_case->next_union_switch_case) {
+        pWriter__end_line(self->writer);
+        Generator__write_source_location(self, union_switch_case->location);
+        Generator__write_identation(self);
+        if (union_switch_case != statement->first_union_switch_case) {
+            pWriter__write__cstring(self->writer, "else ");
+        }
+        pWriter__write__cstring(self->writer, "if (");
+        Generator__generate_expression(self, statement->expression);
+        pWriter__write__cstring(self->writer, ".variant == ");
+        pWriter__write__int64(self->writer, union_switch_case->union_variant->index);
+        pWriter__write__cstring(self->writer, ") ");
+        Generator__generate_statement(self, union_switch_case->statement);
+    }
+}
+
 void Generator__generate_variable_statement(Generator *self, Checked_Variable_Statement *statement) {
     if (statement->is_external) {
         pWriter__write__cstring(self->writer, "extern ");
@@ -442,25 +553,41 @@ void Generator__generate_while_statement(Generator *self, Checked_While_Statemen
 }
 
 void Generator__generate_statement(Generator *self, Checked_Statement *statement) {
-    if (statement->kind == CHECKED_STATEMENT_KIND__ASSIGNMENT) {
+    switch (statement->kind) {
+    case CHECKED_STATEMENT_KIND__ASSIGNMENT:
         Generator__generate_assignment_statement(self, (Checked_Assignment_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__BLOCK) {
+        break;
+    case CHECKED_STATEMENT_KIND__BLOCK:
         Generator__generate_block_statement(self, (Checked_Block_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__BREAK) {
+        break;
+    case CHECKED_STATEMENT_KIND__BREAK:
         Generator__generate_break_statement(self, (Checked_Break_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__EXPRESSION) {
+        break;
+    case CHECKED_STATEMENT_KIND__EXPRESSION:
         Generator__generate_expression_statement(self, (Checked_Expression_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__IF) {
+        break;
+    case CHECKED_STATEMENT_KIND__IF:
         Generator__generate_if_statement(self, (Checked_If_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__LOOP) {
+        break;
+    case CHECKED_STATEMENT_KIND__LOOP:
         Generator__generate_loop_statement(self, (Checked_Loop_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__RETURN) {
+        break;
+    case CHECKED_STATEMENT_KIND__RETURN:
         Generator__generate_return_statement(self, (Checked_Return_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__VARIABLE) {
+        break;
+    case CHECKED_STATEMENT_KIND__UNION_IF:
+        Generator__generate_union_if_statement(self, (Checked_Union_If_Statement *)statement);
+        break;
+    case CHECKED_STATEMENT_KIND__UNION_SWITCH:
+        Generator__generate_union_switch_statement(self, (Checked_Union_Switch_Statement *)statement);
+        break;
+    case CHECKED_STATEMENT_KIND__VARIABLE:
         Generator__generate_variable_statement(self, (Checked_Variable_Statement *)statement);
-    } else if (statement->kind == CHECKED_STATEMENT_KIND__WHILE) {
+        break;
+    case CHECKED_STATEMENT_KIND__WHILE:
         Generator__generate_while_statement(self, (Checked_While_Statement *)statement);
-    } else {
+        break;
+    default:
         pWriter__begin_location_message(stderr_writer, statement->location, WRITER_STYLE__ERROR);
         pWriter__write__cstring(stderr_writer, "Unsupported statement");
         pWriter__end_location_message(stderr_writer);
@@ -561,11 +688,63 @@ void Generator__generate_make_struct_function(Generator *self, Checked_Struct_Ty
 }
 
 void Generator__declare_trait(Generator *self, Checked_Trait_Type *trait_type) {
-    Generator__declare_struct(self, trait_type->struct_type);
+    pWriter__write__cdecl(self->writer, NULL, (Checked_Type *)trait_type);
+    pWriter__write__cstring(self->writer, ";\n");
 }
 
 void Generator__generate_trait(Generator *self, Checked_Trait_Type *trait_type) {
     Generator__generate_struct(self, trait_type->struct_type);
+}
+
+void Generator__declare_union(Generator *self, Checked_Union_Type *union_type) {
+    pWriter__write__cdecl(self->writer, NULL, (Checked_Type *)union_type);
+    pWriter__write__cstring(self->writer, ";\n");
+}
+
+void Generator__generate_union(Generator *self, Checked_Union_Type *union_type) {
+    pWriter__write__cdecl(self->writer, NULL, (Checked_Type *)union_type);
+    pWriter__write__cstring(self->writer, " {\n");
+    pWriter__write__cstring(self->writer, "    int32_t variant;\n");
+    Checked_Union_Variant *variant = union_type->first_variant;
+    if (variant != NULL) {
+        String *variant_name = String__create();
+        pWriter__write__cstring(self->writer, "    union {\n");
+        while (variant != NULL) {
+            if (variant->index != 0) {
+                String__clear(variant_name);
+                String__append_cstring(variant_name, "variant_");
+                String__append_int16_t(variant_name, variant->index);
+                pWriter__write__cstring(self->writer, "        ");
+                pWriter__write__cdecl(self->writer, variant_name, variant->type);
+                pWriter__write__cstring(self->writer, ";\n");
+            }
+            variant = variant->next_variant;
+        }
+        pWriter__write__cstring(self->writer, "    };\n");
+    }
+    pWriter__write__cstring(self->writer, "};\n\n");
+}
+
+void Generator__define_type(Generator *self, Checked_Type *type) {
+    struct Checked_Type_Dependency *dependency = type->first_dependency;
+    while (dependency != NULL) {
+        if (!dependency->type->has_generated_definition) {
+            Generator__define_type(self, dependency->type);
+        }
+        dependency = dependency->next_dependency;
+    }
+    switch (type->kind) {
+    case CHECKED_TYPE_KIND__STRUCT:
+        Generator__generate_struct(self, (Checked_Struct_Type *)type);
+        break;
+    case CHECKED_TYPE_KIND__TRAIT:
+        Generator__generate_trait(self, (Checked_Trait_Type *)type);
+        break;
+    case CHECKED_TYPE_KIND__UNION:
+        Generator__generate_union(self, (Checked_Union_Type *)type);
+        break;
+    }
+    type->has_generated_definition = true;
 }
 
 void generate(Writer *writer, Checked_Source *checked_source) {
@@ -600,7 +779,7 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Declare all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source)) {
             Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
             switch (named_type->super.kind) {
             case CHECKED_TYPE_KIND__EXTERNAL:
@@ -611,6 +790,9 @@ void generate(Writer *writer, Checked_Source *checked_source) {
                 break;
             case CHECKED_TYPE_KIND__TRAIT:
                 Generator__declare_trait(&generator, (Checked_Trait_Type *)named_type);
+                break;
+            case CHECKED_TYPE_KIND__UNION:
+                Generator__declare_union(&generator, (Checked_Union_Type *)named_type);
                 break;
             }
             pWriter__end_line(generator.writer);
@@ -623,15 +805,10 @@ void generate(Writer *writer, Checked_Source *checked_source) {
     /* Generate all defined types */
     checked_symbol = checked_source->first_symbol;
     while (checked_symbol != NULL) {
-        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source || String__equals_cstring(checked_symbol->name, "String"))) {
-            Checked_Named_Type *named_type = ((Checked_Type_Symbol *)checked_symbol)->named_type;
-            switch (named_type->super.kind) {
-            case CHECKED_TYPE_KIND__STRUCT:
-                Generator__generate_struct(&generator, (Checked_Struct_Type *)named_type);
-                break;
-            case CHECKED_TYPE_KIND__TRAIT:
-                Generator__generate_trait(&generator, (Checked_Trait_Type *)named_type);
-                break;
+        if (checked_symbol->kind == CHECKED_SYMBOL_KIND__TYPE && (checked_symbol->location != NULL && checked_symbol->location->source == checked_source->first_source)) {
+            Checked_Type *type = (Checked_Type *)((Checked_Type_Symbol *)checked_symbol)->named_type;
+            if (!type->has_generated_definition) {
+                Generator__define_type(&generator, type);
             }
         }
         checked_symbol = checked_symbol->next_symbol;

@@ -20,6 +20,7 @@ typedef enum Parsed_Expression_Kind {
     PARSED_EXPRESSION_KIND__GREATER_OR_EQUALS,
     PARSED_EXPRESSION_KIND__GROUP,
     PARSED_EXPRESSION_KIND__INTEGER,
+    PARSED_EXPRESSION_KIND__IS,
     PARSED_EXPRESSION_KIND__LESS,
     PARSED_EXPRESSION_KIND__LESS_OR_EQUALS,
     PARSED_EXPRESSION_KIND__LOGIC_AND,
@@ -34,7 +35,7 @@ typedef enum Parsed_Expression_Kind {
     PARSED_EXPRESSION_KIND__NULL,
     PARSED_EXPRESSION_KIND__SIZEOF,
     PARSED_EXPRESSION_KIND__STRING,
-    PARSED_EXPRESSION_KIND__SUBSTRACT,
+    PARSED_EXPRESSION_KIND__SUBTRACT,
     PARSED_EXPRESSION_KIND__SYMBOL
 } Parsed_Expression_Kind;
 
@@ -238,6 +239,15 @@ typedef struct Parsed_Integer_Expression {
 
 Parsed_Integer_Expression *Parsed_Integer_Expression__create(Integer_Token *literal, Parsed_Named_Type *type);
 
+typedef struct Parsed_Is_Expression {
+    Parsed_Expression super;
+    Parsed_Expression *value_expression;
+    Parsed_Type *runtime_type;
+    bool is_not;
+} Parsed_Is_Expression;
+
+Parsed_Is_Expression *Parsed_Is_Expression__create(Parsed_Expression *object_expression, Parsed_Type *runtime_type, bool is_not);
+
 typedef struct Parsed_Less_Expression {
     Parsed_Binary_Expression super;
 } Parsed_Less_Expression;
@@ -328,11 +338,11 @@ typedef struct Parsed_String_Expression {
 
 Parsed_String_Expression *Parsed_String_Expression__create(String_Token *literal);
 
-typedef struct Parsed_Substract_Expression {
+typedef struct Parsed_Subtract_Expression {
     Parsed_Binary_Expression super;
-} Parsed_Substract_Expression;
+} Parsed_Subtract_Expression;
 
-Parsed_Substract_Expression *Parsed_Substract_Expression__create(Parsed_Expression *left_expression, Parsed_Expression *right_expression);
+Parsed_Subtract_Expression *Parsed_Subtract_Expression__create(Parsed_Expression *left_expression, Parsed_Expression *right_expression);
 
 typedef struct Parsed_Symbol_Expression {
     Parsed_Expression super;
@@ -353,6 +363,9 @@ typedef enum Parsed_Statement_Kind {
     PARSED_STATEMENT_KIND__RETURN,
     PARSED_STATEMENT_KIND__STRUCT,
     PARSED_STATEMENT_KIND__TRAIT,
+    PARSED_STATEMENT_KIND__UNION,
+    PARSED_STATEMENT_KIND__UNION_IF,
+    PARSED_STATEMENT_KIND__UNION_SWITCH,
     PARSED_STATEMENT_KIND__VARIABLE,
     PARSED_STATEMENT_KIND__WHILE
 } Parsed_Statement_Kind;
@@ -364,6 +377,8 @@ typedef struct Parsed_Statement {
 } Parsed_Statement;
 
 Parsed_Statement *Parsed_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location *location);
+
+bool Parsed_Statement__is_type_statement(Parsed_Statement *self);
 
 typedef struct Parsed_Statements {
     Parsed_Statement *first_statement;
@@ -481,6 +496,48 @@ typedef struct Parsed_Trait_Statement {
 } Parsed_Trait_Statement;
 
 Parsed_Trait_Statement *Parsed_Trait_Statement__create(Source_Location *location, Token *name);
+
+typedef struct Parsed_Union_Variant {
+    Parsed_Type *type;
+    struct Parsed_Union_Variant *next_variant;
+} Parsed_Union_Variant;
+
+Parsed_Union_Variant *Parsed_Union_Variant__create(Parsed_Type *type);
+
+typedef struct Parsed_Union_Statement {
+    Parsed_Named_Statement super;
+    Parsed_Union_Variant *first_variant;
+} Parsed_Union_Statement;
+
+Parsed_Union_Statement *Parsed_Union_Statement__create(Source_Location *location, Token *name);
+
+typedef struct Parsed_Union_If_Statement {
+    Parsed_Statement super;
+    Identifier_Token *variant_alias;
+    Parsed_Expression *expression;
+    Parsed_Type *variant_type;
+    Parsed_Statement *true_statement;
+    Parsed_Statement *false_statement;
+} Parsed_Union_If_Statement;
+
+Parsed_Union_If_Statement *Parsed_Union_If_Statement__create(Source_Location *location, Identifier_Token *variant_alias, Parsed_Expression *expression, Parsed_Type *variant_type, Parsed_Statement *true_statement, Parsed_Statement *false_statement);
+
+typedef struct Parsed_Union_Switch_Case {
+    Parsed_Type *type;
+    Parsed_Statement *statement;
+    struct Parsed_Union_Switch_Case *next_case;
+} Parsed_Union_Switch_Case;
+
+Parsed_Union_Switch_Case *Parsed_Union_Switch_Case__create(Parsed_Type *type, Parsed_Statement *block);
+
+typedef struct Parsed_Union_Switch_Statement {
+    Parsed_Statement super;
+    Identifier_Token *variant_alias;
+    Parsed_Expression *expression;
+    Parsed_Union_Switch_Case *first_case;
+} Parsed_Union_Switch_Statement;
+
+Parsed_Union_Switch_Statement *Parsed_Union_Switch_Statement__create(Source_Location *location, Identifier_Token *variant_alias, Parsed_Expression *expression, Parsed_Union_Switch_Case *first_case);
 
 typedef struct Parsed_Variable_Statement {
     Parsed_Named_Statement super;

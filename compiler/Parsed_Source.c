@@ -162,6 +162,14 @@ Parsed_Integer_Expression *Parsed_Integer_Expression__create(Integer_Token *lite
     return expression;
 }
 
+Parsed_Is_Expression *Parsed_Is_Expression__create(Parsed_Expression *value_expression, Parsed_Type *runtime_type, bool is_not) {
+    Parsed_Is_Expression *expression = (Parsed_Is_Expression *)Parsed_Expression__create_kind(PARSED_EXPRESSION_KIND__IS, sizeof(Parsed_Is_Expression), value_expression->location);
+    expression->value_expression = value_expression;
+    expression->runtime_type = runtime_type;
+    expression->is_not = is_not;
+    return expression;
+}
+
 Parsed_Less_Expression *Parsed_Less_Expression__create(Parsed_Expression *left_expression, Parsed_Expression *right_expression) {
     return (Parsed_Less_Expression *)Parsed_Binary_Expression__create_kind(PARSED_EXPRESSION_KIND__LESS, left_expression, right_expression);
 }
@@ -228,8 +236,8 @@ Parsed_String_Expression *Parsed_String_Expression__create(String_Token *literal
     return expression;
 }
 
-Parsed_Substract_Expression *Parsed_Substract_Expression__create(Parsed_Expression *left_expression, Parsed_Expression *right_expression) {
-    return (Parsed_Substract_Expression *)Parsed_Binary_Expression__create_kind(PARSED_EXPRESSION_KIND__SUBSTRACT, left_expression, right_expression);
+Parsed_Subtract_Expression *Parsed_Subtract_Expression__create(Parsed_Expression *left_expression, Parsed_Expression *right_expression) {
+    return (Parsed_Subtract_Expression *)Parsed_Binary_Expression__create_kind(PARSED_EXPRESSION_KIND__SUBTRACT, left_expression, right_expression);
 }
 
 Parsed_Symbol_Expression *Parsed_Symbol_Expression__create(Token *name) {
@@ -244,6 +252,17 @@ Parsed_Statement *Parsed_Statement__create_kind(Parsed_Statement_Kind kind, size
     statement->location = location;
     statement->next_statement = NULL;
     return statement;
+}
+
+bool Parsed_Statement__is_type_statement(Parsed_Statement *statement) {
+    switch (statement->kind) {
+    case PARSED_STATEMENT_KIND__EXTERNAL_TYPE:
+    case PARSED_STATEMENT_KIND__STRUCT:
+    case PARSED_STATEMENT_KIND__TRAIT:
+    case PARSED_STATEMENT_KIND__UNION:
+        return true;
+    }
+    return false;
 }
 
 Parsed_Named_Statement *Parsed_Named_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location *location, Token *name) {
@@ -336,6 +355,45 @@ Parsed_Trait_Method *Parsed_Trait_Method__create(Source_Location *location, Toke
 Parsed_Trait_Statement *Parsed_Trait_Statement__create(Source_Location *location, Token *name) {
     Parsed_Trait_Statement *statement = (Parsed_Trait_Statement *)Parsed_Named_Statement__create_kind(PARSED_STATEMENT_KIND__TRAIT, sizeof(Parsed_Trait_Statement), location, name);
     statement->first_method = NULL;
+    return statement;
+}
+
+Parsed_Union_Variant *Parsed_Union_Variant__create(Parsed_Type *type) {
+    Parsed_Union_Variant *variant = (Parsed_Union_Variant *)malloc(sizeof(Parsed_Union_Variant));
+    variant->type = type;
+    variant->next_variant = NULL;
+    return variant;
+}
+
+Parsed_Union_Statement *Parsed_Union_Statement__create(Source_Location *location, Token *name) {
+    Parsed_Union_Statement *statement = (Parsed_Union_Statement *)Parsed_Named_Statement__create_kind(PARSED_STATEMENT_KIND__UNION, sizeof(Parsed_Union_Statement), location, name);
+    statement->first_variant = NULL;
+    return statement;
+}
+
+Parsed_Union_If_Statement *Parsed_Union_If_Statement__create(Source_Location *location, Identifier_Token *variant_alias, Parsed_Expression *expression, Parsed_Type *variant_type, Parsed_Statement *true_statement, Parsed_Statement *false_statement) {
+    Parsed_Union_If_Statement *statement = (Parsed_Union_If_Statement *)Parsed_Statement__create_kind(PARSED_STATEMENT_KIND__UNION_IF, sizeof(Parsed_Union_If_Statement), location);
+    statement->variant_alias = variant_alias;
+    statement->expression = expression;
+    statement->variant_type = variant_type;
+    statement->true_statement = true_statement;
+    statement->false_statement = false_statement;
+    return statement;
+}
+
+Parsed_Union_Switch_Case *Parsed_Union_Switch_Case__create(Parsed_Type *type, Parsed_Statement *block) {
+    Parsed_Union_Switch_Case *case_ = (Parsed_Union_Switch_Case *)malloc(sizeof(Parsed_Union_Switch_Case));
+    case_->type = type;
+    case_->statement = block;
+    case_->next_case = NULL;
+    return case_;
+}
+
+Parsed_Union_Switch_Statement *Parsed_Union_Switch_Statement__create(Source_Location *location, Identifier_Token *variant_alias, Parsed_Expression *expression, Parsed_Union_Switch_Case *first_case) {
+    Parsed_Union_Switch_Statement *statement = (Parsed_Union_Switch_Statement *)Parsed_Statement__create_kind(PARSED_STATEMENT_KIND__UNION_SWITCH, sizeof(Parsed_Union_Switch_Statement), location);
+    statement->variant_alias = variant_alias;
+    statement->expression = expression;
+    statement->first_case = first_case;
     return statement;
 }
 

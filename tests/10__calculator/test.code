@@ -10,14 +10,141 @@ func main(anon argc: i32, anon argv: [@][@]u8) {
 
     let stdout_writer = make Writer(stdout)
 
-    stdout_writer.write(string: "Tokens:").end_line()
-
-    while tokenizer.has_next_token() {
+    while tokenizer.peek_token() is not Stop {
         let token = tokenizer.next_token()
-        if token.kind == 0 {
-            break
-        }
         stdout_writer.write(token: token).end_line()
+    }
+}
+
+\ ------------------------------------------------------------------------------ Parser
+
+struct Parser {
+    tokenizer: Tokenizer
+}
+
+\ func @Parser.parse_expression(self) -> Expression {
+\     return self.parse_additive_expression()
+\ }
+\ 
+\ func @Parser.parse_additive_expression(self) -> Expression {
+\     let expression = self.parse_multiplicative_expression()
+\     loop {
+\         let token = self.tokenizer.peek_token()
+\         if plus in token is Plus {
+\             self.tokenizer.next_token()
+\             let other_expression = self.parse_multiplicative_expression()
+\             expression = make Addition(
+\                 span: make Span(start: expression.span().start, end: other_expression.span().end)
+\                 left: expression
+\                 right: other_expression
+\             )
+\         } else if minus in token is Minus {
+\             self.tokenizer.next_token()
+\             let other_expression = self.parse_multiplicative_expression()
+\             expression = make Subtraction(
+\                 span: make Span(start: expression.span.start, end: other_expression.span.end)
+\                 left: expression
+\                 right: other_expression
+\             )
+\         } else {
+\             break
+\         }
+\     }
+\ }
+\ 
+\ func @Parser.parse_multiplicative_expression(self) -> Expression {
+\     let expression = self.parse_primary_expression()
+\     loop {
+\         let token = self.tokenizer.peek_token()
+\         if multiply in token is Multiply {
+\             self.tokenizer.next_token()
+\             let other_expression = self.parse_primary_expression()
+\             expression = make Multiplication(
+\                 span: make Span(start: expression.span.start, end: other_expression.span.end)
+\                 left: expression
+\                 right: other_expression
+\             )
+\         } else if divide in token is Divide {
+\             self.tokenizer.next_token()
+\             let other_expression = self.parse_primary_expression()
+\             expression = make Division(
+\                 span: make Span(start: expression.span.start, end: other_expression.span.end)
+\                 left: expression
+\                 right: other_expression
+\             )
+\         } else {
+\             break
+\         }
+\     }
+\     return expression
+\ }
+\ 
+\ func @Parser.parse_primary_expression(self) -> Expression {
+\     let token = self.tokenizer.next_token()
+\     if number in token is Number {
+\         return number
+\     }
+\     return make Error(
+\         span: token.span
+\         message: "Expected number"
+\     )
+\ }
+
+\ ------------------------------------------------------------------------------ Parsed_Expression
+
+union Expression {
+    Number
+    Addition
+    Division
+    Multiplication
+    Subtraction
+}
+
+struct Addition {
+    span: Span
+    left: @Expression
+    right: @Expression
+}
+
+struct Division {
+    span: Span
+    left: @Expression
+    right: @Expression
+}
+
+struct Multiplication {
+    span: Span
+    left: @Expression
+    right: @Expression
+}
+
+struct Subtraction {
+    span: Span
+    left: @Expression
+    right: @Expression
+}
+
+func @Expression.span(self) -> Span {
+    let expression = self.@
+    switch variant in expression {
+        case Number {
+            return variant.span
+        }
+        case Addition {
+            return variant.span
+        }
+        case Division {
+            return variant.span
+        }
+        case Multiplication {
+            return variant.span
+        }
+        case Subtraction {
+            return variant.span
+        }
+        case nil {
+            return make Span(start: 0, end: 0)
+        }
     }
 }
 
@@ -26,83 +153,176 @@ func main(anon argc: i32, anon argv: [@][@]u8) {
 struct Tokenizer {
     data: [@]u8
     index: i32
+
+    current_token: Token
 }
 
-func @Tokenizer.has_next_token(self) -> bool {
-    return self.data[self.index] != 0
-}
-
-func @Tokenizer.next_token(self) -> @Token {
-    let lexeme_builder = make_string_builder()
-    let c = self.data[self.index]
-    if c >= '0' and c <= '9' {
-        return self.scan_number_token(@lexeme_builder)
+func @Tokenizer.peek_token(self) -> Token {
+    if self.current_token is nil {
+        self.current_token = self.scan_token()
     }
-    self.index = self.index + 1
-    return make @Token(
-        kind: c
-        span: make Span(
-            lexeme: lexeme_builder.write(char: c).build()
-        )
-        value: 0
-    )
+    return self.current_token
 }
 
-func @Tokenizer.scan_number_token(self, anon lexeme_builder: @String_Builder) -> @Token {
+func @Tokenizer.next_token(self) -> Token {
+    let token = self.peek_token()
+    self.current_token = nil
+    return token
+}
+
+func @Tokenizer.scan_token(self) -> Token {
+    while self.data[self.index] == ' ' {
+        self.index = self.index + 1
+    }
+    let ch = self.data[self.index]
+    if ch == 0 {
+        return make Stop(span: make Span(start: self.index, end: self.index))
+    }
+    if ch != ' ' {
+        if ch >= '0' and ch <= '9' {
+            return self.scan_number_token()
+        }
+        self.index = self.index + 1
+        if ch == '+' {
+            return make Plus(span: make Span(start: self.index - 1, end: self.index))
+        }
+        if ch == '-' {
+            return make Minus(span: make Span(start: self.index - 1, end: self.index))
+        }
+        if ch == '*' {
+            return make Multiply(span: make Span(start: self.index - 1, end: self.index))
+        }
+        if ch == '/' {
+            return make Divide(span: make Span(start: self.index - 1, end: self.index))
+        }
+        return make Error(
+            span: make Span(start: self.index - 1, end: self.index)
+            message: "Unexpected character"
+        )
+    }
+}
+
+func @Tokenizer.scan_number_token(self) -> Token {
+    let start = self.index
     let value = 0
     loop {
         let c = self.data[self.index]
         if c < '0' or c > '9' {
             break
         }
-        lexeme_builder.write(char: c)
         value = value * 10 + (c - '0').as(i32)
         self.index = self.index + 1
     }
-    return make @Token(
-        kind: 'n'
-        span: make Span(
-            lexeme: lexeme_builder.build()
-        )
+    return make Token(make Number(
+        span: make Span(start: start, end: self.index)
         value: value
-    )
-}
-
-\ ------------------------------------------------------------------------------ String
-
-struct String {
-    data: [@]u8
-    length: i32
-}
-
-func @Writer.write(self, string: str) -> @Writer {
-    let string_copy = string
-    let string_data = (@string_copy).as(@String).data
-    let index = 0usize
-    while index < string.length {
-        self.write(char: string_data[index])
-        index = index + 1
-    }
-    return self
+    ))
 }
 
 \ ------------------------------------------------------------------------------ Token
 
+
 struct Span {
-    lexeme: str
+    start: i32
+    end: i32
 }
 
-struct Token {
-    kind: u8
+struct Number {
     span: Span
     value: i32
 }
 
-func @Writer.write(self, token: @Token) -> @Writer {
-    self.write(char: token.kind)
-    if token.kind == 'n' {
-        self.write(char: ':').write(char: ' ').write(signed: token.value)
+struct Plus {
+    span: Span
+}
+
+struct Minus {
+    span: Span
+}
+
+struct Multiply {
+    span: Span
+}
+
+struct Divide {
+    span: Span
+}
+
+struct Stop {
+    span: Span
+}
+
+struct Error {
+    span: Span
+    message: str
+}
+
+union Token {
+    Number
+    Plus
+    Minus
+    Multiply
+    Divide
+    Stop
+    Error
+}
+
+func @Writer.write(self, token: Token) -> @Writer {
+    switch token_kind in token {
+        case Number {
+            return self.write("Number: ").write(signed: token_kind.value)
+        }
+        case Plus {
+            return self.write("Plus")
+        }
+        case Minus {
+            return self.write("Minus")
+        }
+        case Multiply {
+            return self.write("Multiply")
+        }
+        case Divide {
+            return self.write("Divide")
+        }
+        case Stop {
+            return self.write("Stop")
+        }
+        case Error {
+            return self.write("Error: ").write(token_kind.message)
+        }
+        case nil {
+            return self.write("Nil!")
+        }
     }
+    return self
+}
+
+
+\ ------------------------------------------------------------------------------ Writer
+
+trait Writer {
+    func write_char(self, anon c: u8)
+}
+
+func @Writer.write(self, char c: u8) -> @Writer {
+    self.write_char(c)
+    return self
+}
+
+func @Writer.write(self, signed value: i32) -> @Writer {
+    \ TODO: Use a buffer to avoid recursion
+    if value < 0 {
+        self.write(char: '-')
+        return self.write(signed: -value)
+    }
+    if value >= 10 {
+        self.write(signed: value / 10)
+    }
+    return self.write(char: (value // 10).as(u8) + '0')
+}
+
+func @Writer.end_line(self) -> @Writer {
+    self.write(char: '\n')
     return self
 }
 
@@ -131,7 +351,7 @@ func @String_Builder.build(self) -> str {
     self.write(char: 0)
     let string = make String(
         data: self.data
-        length: self.length
+        length: self.length - 1
     )
     return (@string).as(@str).@
 }
@@ -152,31 +372,21 @@ func @String_Builder.write_char(self, anon c: u8) {
     self.write(char: c)
 }
 
-\ ------------------------------------------------------------------------------ Writer
+\ ------------------------------------------------------------------------------ String
 
-trait Writer {
-    func write_char(self, anon c: u8)
+struct String {
+    data: [@]u8
+    length: i32
 }
 
-func @Writer.write(self, char c: u8) -> @Writer {
-    self.write_char(c)
-    return self
-}
-
-func @Writer.write(self, signed value: i32) -> @Writer {
-    \ TODO: Use a buffer to avoid recursion
-    if value < 0 {
-        self.write(char: '-')
-        return self.write(signed: -value)
+func @Writer.write(self, anon string: str) -> @Writer {
+    let string_copy = string
+    let string_data = (@string_copy).as(@String).data
+    let index = 0usize
+    while index < string.length {
+        self.write(char: string_data[index])
+        index = index + 1
     }
-    if value >= 10 {
-        self.write(signed: value / 10)
-    }
-    return self.write(char: (value // 10).as(u8) + '0')
-}
-
-func @Writer.end_line(self) -> @Writer {
-    self.write(char: '\n')
     return self
 }
 

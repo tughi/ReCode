@@ -1,0 +1,17 @@
+union Integer {
+    i8
+    i32
+}
+
+union Value {
+    bool
+    Integer
+}
+
+func main() -> i32 {
+    let value: Value
+    value = true
+    let other_value: Value
+    other_value = value
+    return 0
+}
