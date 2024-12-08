@@ -41,7 +41,7 @@ typedef enum Parsed_Expression_Kind {
 
 typedef struct Parsed_Expression {
     Parsed_Expression_Kind kind;
-    Source_Location *location;
+    Source_Location location;
 } Parsed_Expression;
 
 typedef enum Parsed_Type_Kind {
@@ -55,10 +55,10 @@ typedef enum Parsed_Type_Kind {
 
 typedef struct Parsed_Type {
     Parsed_Type_Kind kind;
-    Source_Location *location;
+    Source_Location location;
 } Parsed_Type;
 
-Parsed_Type *Parsed_Type__create_kind(Parsed_Type_Kind kind, size_t kind_size, Source_Location *location);
+Parsed_Type *Parsed_Type__create_kind(Parsed_Type_Kind kind, size_t kind_size, Source_Location location);
 
 typedef struct Parsed_Array_Type {
     Parsed_Type super;
@@ -66,7 +66,7 @@ typedef struct Parsed_Array_Type {
     Parsed_Expression *size_expression;
 } Parsed_Array_Type;
 
-Parsed_Array_Type *Parsed_Array_Type__create(Source_Location *location, Parsed_Type *item_type, Parsed_Expression *size_expression);
+Parsed_Array_Type *Parsed_Array_Type__create(Source_Location location, Parsed_Type *item_type, Parsed_Expression *size_expression);
 
 typedef struct Parsed_Function_Parameter {
     Token *label;
@@ -83,14 +83,14 @@ typedef struct Parsed_Function_Type {
     Parsed_Type *return_type;
 } Parsed_Function_Type;
 
-Parsed_Type *Parsed_Function_Type__create(Source_Location *location, Parsed_Function_Parameter *first_parameter, Parsed_Type *return_type);
+Parsed_Type *Parsed_Function_Type__create(Source_Location location, Parsed_Function_Parameter *first_parameter, Parsed_Type *return_type);
 
 typedef struct Parsed_Multi_Pointer_Type {
     Parsed_Type super;
     Parsed_Type *item_type;
 } Parsed_Multi_Pointer_Type;
 
-Parsed_Type *Parsed_Multi_Pointer_Type__create(Source_Location *location, Parsed_Type *item_type);
+Parsed_Type *Parsed_Multi_Pointer_Type__create(Source_Location location, Parsed_Type *item_type);
 
 typedef struct Parsed_Named_Type {
     Parsed_Type super;
@@ -104,22 +104,22 @@ typedef struct Parsed_Pointer_Type {
     Parsed_Type *other_type;
 } Parsed_Pointer_Type;
 
-Parsed_Type *Parsed_Pointer_Type__create(Parsed_Type *other_type);
+Parsed_Type *Parsed_Pointer_Type__create(Source_Location location, Parsed_Type *other_type);
 
 typedef struct Parsed_Receiver_Type {
     Parsed_Type super;
 } Parsed_Receiver_Type;
 
-Parsed_Receiver_Type *Parsed_Receiver_Type__create(Source_Location *location);
+Parsed_Receiver_Type *Parsed_Receiver_Type__create(Source_Location location);
 
-Parsed_Expression *Parsed_Expression__create_kind(Parsed_Expression_Kind kind, size_t kind_size, Source_Location *location);
+Parsed_Expression *Parsed_Expression__create_kind(Parsed_Expression_Kind kind, size_t kind_size, Source_Location location);
 
 typedef struct Parsed_Alloc_Expression {
     Parsed_Expression super;
     Parsed_Expression *value_expression;
 } Parsed_Alloc_Expression;
 
-Parsed_Alloc_Expression *Parsed_Alloc_Expression__create(Source_Location *location, Parsed_Expression *value_expression);
+Parsed_Alloc_Expression *Parsed_Alloc_Expression__create(Source_Location location, Parsed_Expression *value_expression);
 
 typedef struct Parsed_Binary_Expression {
     Parsed_Expression super;
@@ -134,7 +134,7 @@ typedef struct Parsed_Unary_Expression {
     Parsed_Expression *other_expression;
 } Parsed_Unary_Expression;
 
-Parsed_Unary_Expression *Parsed_Unary_Expression__create_kind(Parsed_Expression_Kind kind, size_t kind_size, Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Unary_Expression *Parsed_Unary_Expression__create_kind(Parsed_Expression_Kind kind, size_t kind_size, Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Literal_Expression {
     Parsed_Expression super;
@@ -153,7 +153,7 @@ typedef struct Parsed_Address_Of_Expression {
     Parsed_Unary_Expression super;
 } Parsed_Address_Of_Expression;
 
-Parsed_Address_Of_Expression *Parsed_Address_Of_Expression__create(Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Address_Of_Expression *Parsed_Address_Of_Expression__create(Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Array_Access_Expression {
     Parsed_Expression super;
@@ -161,7 +161,7 @@ typedef struct Parsed_Array_Access_Expression {
     Parsed_Expression *index_expression;
 } Parsed_Array_Access_Expression;
 
-Parsed_Array_Access_Expression *Parsed_Array_Access_Expression__create(Parsed_Expression *array_expression, Parsed_Expression *index_expression);
+Parsed_Array_Access_Expression *Parsed_Array_Access_Expression__create(Source_Location location, Parsed_Expression *array_expression, Parsed_Expression *index_expression);
 
 typedef struct Parsed_Bool_Expression {
     Parsed_Literal_Expression super;
@@ -171,13 +171,13 @@ typedef struct Parsed_Bool_Expression {
 Parsed_Bool_Expression *Parsed_Bool_Expression__create(Token *literal, bool value);
 
 typedef struct Parsed_Call_Argument {
-    Source_Location *location;
+    Source_Location location;
     Identifier_Token *name;
     Parsed_Expression *expression;
     struct Parsed_Call_Argument *next_argument;
 } Parsed_Call_Argument;
 
-Parsed_Call_Argument *Parsed_Call_Argument__create(Source_Location *location, Identifier_Token *name, Parsed_Expression *expression);
+Parsed_Call_Argument *Parsed_Call_Argument__create(Source_Location location, Identifier_Token *name, Parsed_Expression *expression);
 
 typedef struct Parsed_Call_Expression {
     Parsed_Expression super;
@@ -185,14 +185,14 @@ typedef struct Parsed_Call_Expression {
     Parsed_Call_Argument *first_argument;
 } Parsed_Call_Expression;
 
-Parsed_Call_Expression *Parsed_Call_Expression__create(Parsed_Expression *callee_expression, Parsed_Call_Argument *first_argument);
+Parsed_Call_Expression *Parsed_Call_Expression__create(Source_Location location, Parsed_Expression *callee_expression, Parsed_Call_Argument *first_argument);
 
 typedef struct Parsed_Cast_Expression {
     Parsed_Unary_Expression super;
     Parsed_Type *type;
 } Parsed_Cast_Expression;
 
-Parsed_Cast_Expression *Parsed_Cast_Expression__create(Source_Location *location, Parsed_Expression *other_expression, Parsed_Type *type);
+Parsed_Cast_Expression *Parsed_Cast_Expression__create(Source_Location location, Parsed_Expression *other_expression, Parsed_Type *type);
 
 typedef struct Parsed_Character_Expression {
     Parsed_Literal_Expression super;
@@ -205,7 +205,7 @@ typedef struct Parsed_Dereference_Expression {
     Parsed_Unary_Expression super;
 } Parsed_Dereference_Expression;
 
-Parsed_Dereference_Expression *Parsed_Dereference_Expression__create(Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Dereference_Expression *Parsed_Dereference_Expression__create(Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Divide_Expression {
     Parsed_Binary_Expression super;
@@ -236,7 +236,7 @@ typedef struct Parsed_Group_Expression {
     Parsed_Expression *other_expression;
 } Parsed_Group_Expression;
 
-Parsed_Group_Expression *Parsed_Group_Expression__create(Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Group_Expression *Parsed_Group_Expression__create(Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Integer_Expression {
     Parsed_Literal_Expression super;
@@ -291,7 +291,7 @@ typedef struct Parsed_Minus_Expression {
     Parsed_Unary_Expression super;
 } Parsed_Minus_Expression;
 
-Parsed_Minus_Expression *Parsed_Minus_Expression__create(Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Minus_Expression *Parsed_Minus_Expression__create(Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Modulo_Expression {
     Parsed_Binary_Expression super;
@@ -309,7 +309,7 @@ typedef struct Parsed_Not_Expression {
     Parsed_Unary_Expression super;
 } Parsed_Not_Expression;
 
-Parsed_Not_Expression *Parsed_Not_Expression__create(Source_Location *location, Parsed_Expression *other_expression);
+Parsed_Not_Expression *Parsed_Not_Expression__create(Source_Location location, Parsed_Expression *other_expression);
 
 typedef struct Parsed_Not_Equals_Expression {
     Parsed_Binary_Expression super;
@@ -328,7 +328,7 @@ typedef struct Parsed_Sizeof_Expression {
     Parsed_Type *type;
 } Parsed_Sizeof_Expression;
 
-Parsed_Sizeof_Expression *Parsed_Sizeof_Expression__create(Source_Location *location, Parsed_Type *type);
+Parsed_Sizeof_Expression *Parsed_Sizeof_Expression__create(Source_Location location, Parsed_Type *type);
 
 typedef struct Parsed_String_Expression {
     Parsed_Literal_Expression super;
@@ -370,11 +370,11 @@ typedef enum Parsed_Statement_Kind {
 
 typedef struct Parsed_Statement {
     Parsed_Statement_Kind kind;
-    Source_Location *location;
+    Source_Location location;
     struct Parsed_Statement *next_statement;
 } Parsed_Statement;
 
-Parsed_Statement *Parsed_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location *location);
+Parsed_Statement *Parsed_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location location);
 
 bool Parsed_Statement__is_type_statement(Parsed_Statement *self);
 
@@ -393,7 +393,7 @@ typedef struct Parsed_Named_Statement {
     Token *name;
 } Parsed_Named_Statement;
 
-Parsed_Named_Statement *Parsed_Named_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location *location, Token *name);
+Parsed_Named_Statement *Parsed_Named_Statement__create_kind(Parsed_Statement_Kind kind, size_t kind_size, Source_Location location, Token *name);
 
 typedef struct Parsed_Assignment_Statement {
     Parsed_Statement super;
@@ -408,13 +408,13 @@ typedef struct Parsed_Block_Statement {
     struct Parsed_Statements *statements;
 } Parsed_Block_Statement;
 
-Parsed_Block_Statement *Parsed_Block_Statement__create(Source_Location *location, struct Parsed_Statements *statements);
+Parsed_Block_Statement *Parsed_Block_Statement__create(Source_Location location, struct Parsed_Statements *statements);
 
 typedef struct Parsed_Break_Statement {
     Parsed_Statement super;
 } Parsed_Break_Statement;
 
-Parsed_Statement *Parsed_Break_Statement__create(Source_Location *location);
+Parsed_Statement *Parsed_Break_Statement__create(Source_Location location);
 
 typedef struct Parsed_Expression_Statement {
     Parsed_Statement super;
@@ -427,7 +427,7 @@ typedef struct Parsed_External_Type_Statement {
     Parsed_Named_Statement super;
 } Parsed_External_Type_Statement;
 
-Parsed_External_Type_Statement *Parsed_External_Type_Statement__create(Source_Location *location, Token *name);
+Parsed_External_Type_Statement *Parsed_External_Type_Statement__create(Source_Location location, Token *name);
 
 typedef struct Parsed_Function_Statement {
     Parsed_Named_Statement super;
@@ -438,7 +438,7 @@ typedef struct Parsed_Function_Statement {
     bool is_external;
 } Parsed_Function_Statement;
 
-Parsed_Statement *Parsed_Function_Statement__create(Source_Location *location, Token *name, Parsed_Type *receiver_type, Parsed_Function_Parameter *first_parameter, Parsed_Type *resturn_type, struct Parsed_Statements *statements, bool is_external);
+Parsed_Statement *Parsed_Function_Statement__create(Source_Location location, Token *name, Parsed_Type *receiver_type, Parsed_Function_Parameter *first_parameter, Parsed_Type *resturn_type, struct Parsed_Statements *statements, bool is_external);
 
 typedef struct Parsed_If_Statement {
     Parsed_Statement super;
@@ -448,21 +448,21 @@ typedef struct Parsed_If_Statement {
     Parsed_Statement *false_statement;
 } Parsed_If_Statement;
 
-Parsed_Statement *Parsed_If_Statement__create(Source_Location *location, Parsed_Expression *condition_expression, Identifier_Token *variant_alias, Parsed_Statement *true_statement, Parsed_Statement *false_statement);
+Parsed_Statement *Parsed_If_Statement__create(Source_Location location, Parsed_Expression *condition_expression, Identifier_Token *variant_alias, Parsed_Statement *true_statement, Parsed_Statement *false_statement);
 
 typedef struct Parsed_Loop_Statement {
     Parsed_Statement super;
     Parsed_Statement *body_statement;
 } Parsed_Loop_Statement;
 
-Parsed_Statement *Parsed_Loop_Statement__create(Source_Location *location, Parsed_Statement *body_statement);
+Parsed_Statement *Parsed_Loop_Statement__create(Source_Location location, Parsed_Statement *body_statement);
 
 typedef struct Parsed_Return_Statement {
     Parsed_Statement super;
     Parsed_Expression *expression;
 } Parsed_Return_Statement;
 
-Parsed_Statement *Parsed_Return_Statement__create(Source_Location *location, Parsed_Expression *expression);
+Parsed_Statement *Parsed_Return_Statement__create(Source_Location location, Parsed_Expression *expression);
 
 typedef struct Parsed_Struct_Member {
     Token *name;
@@ -477,7 +477,7 @@ typedef struct Parsed_Struct_Statement {
     Parsed_Struct_Member *first_member;
 } Parsed_Struct_Statement;
 
-Parsed_Struct_Statement *Parsed_Struct_Statement__create(Source_Location *location, Token *name);
+Parsed_Struct_Statement *Parsed_Struct_Statement__create(Source_Location location, Token *name);
 
 typedef enum Parsed_Switch_Case_Kind {
     PARSED_SWITCH_CASE_KIND__ELSE,
@@ -487,7 +487,7 @@ typedef enum Parsed_Switch_Case_Kind {
 
 typedef struct Parsed_Switch_Case {
     Parsed_Switch_Case_Kind kind;
-    Source_Location *location;
+    Source_Location location;
     union {
         Parsed_Expression *expression;
         struct {
@@ -499,11 +499,11 @@ typedef struct Parsed_Switch_Case {
     struct Parsed_Switch_Case *next_case;
 } Parsed_Switch_Case;
 
-Parsed_Switch_Case *Parsed_Switch_Else__create(Source_Location *location);
+Parsed_Switch_Case *Parsed_Switch_Else__create(Source_Location location);
 
-Parsed_Switch_Case *Parsed_Switch_Expression__create(Source_Location *location, Parsed_Expression *expression);
+Parsed_Switch_Case *Parsed_Switch_Expression__create(Source_Location location, Parsed_Expression *expression);
 
-Parsed_Switch_Case *Parsed_Switch_Variant__create(Source_Location *location, Parsed_Type *type, Identifier_Token *alias);
+Parsed_Switch_Case *Parsed_Switch_Variant__create(Source_Location location, Parsed_Type *type, Identifier_Token *alias);
 
 typedef struct Parsed_Switch_Statement {
     Parsed_Statement super;
@@ -511,24 +511,24 @@ typedef struct Parsed_Switch_Statement {
     Parsed_Switch_Case *first_case;
 } Parsed_Switch_Statement;
 
-Parsed_Switch_Statement *Parsed_Switch_Statement__create(Source_Location *location, Parsed_Expression *expression, Parsed_Switch_Case *first_case);
+Parsed_Switch_Statement *Parsed_Switch_Statement__create(Source_Location location, Parsed_Expression *expression, Parsed_Switch_Case *first_case);
 
 typedef struct Parsed_Trait_Method {
-    Source_Location *location;
+    Source_Location location;
     Token *name;
     Parsed_Function_Parameter *first_parameter;
     Parsed_Type *return_type;
     struct Parsed_Trait_Method *next_method;
 } Parsed_Trait_Method;
 
-Parsed_Trait_Method *Parsed_Trait_Method__create(Source_Location *location, Token *name, Parsed_Function_Parameter *first_parameter, Parsed_Type *return_type);
+Parsed_Trait_Method *Parsed_Trait_Method__create(Source_Location location, Token *name, Parsed_Function_Parameter *first_parameter, Parsed_Type *return_type);
 
 typedef struct Parsed_Trait_Statement {
     Parsed_Named_Statement super;
     Parsed_Trait_Method *first_method;
 } Parsed_Trait_Statement;
 
-Parsed_Trait_Statement *Parsed_Trait_Statement__create(Source_Location *location, Token *name);
+Parsed_Trait_Statement *Parsed_Trait_Statement__create(Source_Location location, Token *name);
 
 typedef struct Parsed_Union_Variant {
     Parsed_Type *type;
@@ -542,7 +542,7 @@ typedef struct Parsed_Union_Statement {
     Parsed_Union_Variant *first_variant;
 } Parsed_Union_Statement;
 
-Parsed_Union_Statement *Parsed_Union_Statement__create(Source_Location *location, Token *name);
+Parsed_Union_Statement *Parsed_Union_Statement__create(Source_Location location, Token *name);
 
 typedef struct Parsed_Variable_Statement {
     Parsed_Named_Statement super;
@@ -551,7 +551,7 @@ typedef struct Parsed_Variable_Statement {
     bool is_external;
 } Parsed_Variable_Statement;
 
-Parsed_Variable_Statement *Parsed_Variable_Statement__create(Source_Location *location, Token *name, Parsed_Type *type, Parsed_Expression *expression, bool is_external);
+Parsed_Variable_Statement *Parsed_Variable_Statement__create(Source_Location location, Token *name, Parsed_Type *type, Parsed_Expression *expression, bool is_external);
 
 typedef struct Parsed_While_Statement {
     Parsed_Statement super;
@@ -559,7 +559,7 @@ typedef struct Parsed_While_Statement {
     Parsed_Statement *body_statement;
 } Parsed_While_Statement;
 
-Parsed_Statement *Parsed_While_Statement__create(Source_Location *location, Parsed_Expression *condition_expression, Parsed_Statement *body_statement);
+Parsed_Statement *Parsed_While_Statement__create(Source_Location location, Parsed_Expression *condition_expression, Parsed_Statement *body_statement);
 
 typedef struct Parsed_Source {
     Source *first_source;
