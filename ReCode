@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 from datetime import datetime
 from typing import List, Optional
 
@@ -80,13 +81,13 @@ def build_stage(n):
 
 
 def assemble(source_file, output_file, sdl=False, **kwargs):
-    if source_file is None:
-        run(['gcc', '-x', 'assembler', '-o', output_file, '-g', '-no-pie', '-Wl,-z,noexecstack', *(['-lSDL2'] if sdl else []), '-'], **kwargs)
-    elif not os.path.exists(output_file) or os.path.getmtime(source_file) > os.path.getmtime(output_file):
-        run(['gcc', source_file, '-o', output_file, '-g', '-no-pie', '-Wl,-z,noexecstack', *(['-lSDL2'] if sdl else [])], **kwargs)
+    if not os.path.exists(output_file) or os.path.getmtime(source_file) > os.path.getmtime(output_file):
+        run(['cc', source_file, '-o', output_file, '-g', *(['-lSDL2'] if sdl else [])], **kwargs)
 
 
 def trace(*command, ignore_output=True):
+    if not sys.platform.startswith('linux'):
+        return
     logger.info(f"Tracing: {' '.join(command)}")
     subprocess.run(
         ' '.join([
