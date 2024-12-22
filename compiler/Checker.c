@@ -230,6 +230,8 @@ Checked_Expression *Checker__check_alloc_expression(Checker *self, Parsed_Alloc_
     case CHECKED_TYPE_KIND__TRAIT:
     case CHECKED_TYPE_KIND__UNION:
         return (Checked_Expression *)Checked_Alloc_Expression__create(parsed_expression->super.location, (Checked_Type *)Checked_Pointer_Type__create(parsed_expression->super.location, value_type), value_expression);
+    default:
+        break;
     }
     pWriter__begin_location_message(stderr_writer, parsed_expression->value_expression->location, WRITER_STYLE__ERROR);
     pWriter__write__cstring(stderr_writer, "Cannot allocate ");
@@ -859,6 +861,8 @@ Checked_Expression *Checker__check_is_expression(Checker *self, Parsed_Is_Expres
         panic();
         break;
     }
+    default:
+        break;
     }
     pWriter__begin_location_message(stderr_writer, parsed_expression->super.location, WRITER_STYLE__ERROR);
     pWriter__write__cstring(stderr_writer, "The is opearator doesn't work with ");
@@ -1259,6 +1263,8 @@ Checked_Function_Type *Checker__check_function_type(Checker *self, Source_Locati
             pWriter__write__cstring(stderr_writer, "Cannot use external type as return type");
             pWriter__end_location_message(stderr_writer);
             panic();
+        default:
+            break;
         }
     } else {
         function_return_type = (Checked_Type *)self->nothing_type;
@@ -1279,6 +1285,8 @@ Checked_Function_Type *Checker__check_function_type(Checker *self, Source_Locati
             pWriter__write__cstring(stderr_writer, "Cannot use external types as function parameters");
             pWriter__end_location_message(stderr_writer);
             panic();
+        default:
+            break;
         }
         Checked_Function_Parameter *function_parameter = Checked_Function_Parameter__create(parsed_parameter->name->location, parsed_parameter->label ? parsed_parameter->label->lexeme : NULL, parsed_parameter->name->lexeme, function_parameter_type);
         if (function_first_parameter == NULL) {
@@ -1613,6 +1621,8 @@ Checked_Variable_Statement *Checker__check_variable_statement(Checker *self, Par
                 pWriter__write__cstring(stderr_writer, "Cannot infer type from null expression");
                 pWriter__end_location_message(stderr_writer);
                 panic();
+            default:
+                break;
             }
             variable_type = expression->type;
         } else if (variable_type->kind == CHECKED_TYPE_KIND__UNION && !Checked_Type__equals(variable_type, expression->type)) {
@@ -1667,7 +1677,13 @@ void Checker__check_function_declaration(Checker *self, Parsed_Function_Statemen
 
     String *function_name = parsed_statement->super.name->lexeme;
 
-    String *symbol_name = String__create();
+    String *symbol_name;
+    if (!parsed_statement->is_external) {
+        symbol_name = String__create_copy(self->parsed_source->package_name);
+        String__append_cstring(symbol_name, "__");
+    } else {
+        symbol_name = String__create();
+    }
     Checked_Type *receiver_type = NULL;
     if (parsed_statement->receiver_type != NULL) {
         if (parsed_statement->is_external) {
@@ -1725,6 +1741,8 @@ Checked_Statement *Checker__check_statement(Checker *self, Parsed_Statement *par
         return (Checked_Statement *)Checker__check_variable_statement(self, (Parsed_Variable_Statement *)parsed_statement);
     case PARSED_STATEMENT_KIND__WHILE:
         return (Checked_Statement *)Checker__check_while_statement(self, (Parsed_While_Statement *)parsed_statement);
+    default:
+        break;
     }
     pWriter__begin_location_message(stderr_writer, parsed_statement->location, WRITER_STYLE__ERROR);
     pWriter__write__cstring(stderr_writer, "Unsupported statement kind");
